@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Video Player — Smoke Test</title>
+  <style>
+    body { background: #0d0d0d; color: #e8e8e8; font-family: system-ui, sans-serif; padding: 2rem; }
+    h1   { font-size: 1.2rem; margin-bottom: 1rem; }
+    pre  { background: #141414; border-radius: 6px; padding: 1rem; line-height: 1.7; font-size: 0.9rem; }
+    .pass  { color: #4caf50; }
+    .fail  { color: #f44336; }
+    .info  { color: #888; }
+    .video-hidden { position: absolute; top: -9999px; left: -9999px; }
+  </style>
+</head>
+<body>
+  <h1>Workshop 1 — Video Player Smoke Test</h1>
+  <p style="color:#888;font-size:.85rem;margin-bottom:1rem">
+    Open browser DevTools console for [player] event logs.
+    All assertions run 1s after page load.
+  </p>
+  <pre id="results"><span class="info">Running tests...</span></pre>
+
+  <!-- Hidden video element for testing — same src as index.html -->
+  <div class="video-hidden">
+    <video
+      id="player"
+      src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+      preload="metadata"
+    ></video>
+    <div id="controls">
+      <button id="btn-play">&#9654;</button>
+      <input type="range" id="seek" min="0" max="100" step="0.1" value="0" />
+      <span id="time-display">0:00 / 0:00</span>
+      <input type="range" id="volume" min="0" max="1" step="0.05" value="1" />
+      <select id="speed">
+        <option value="0.5">0.5x</option>
+        <option value="1" selected>1x</option>
+        <option value="1.25">1.25x</option>
+        <option value="1.5">1.5x</option>
+        <option value="2">2x</option>
+      </select>
+      <button id="btn-fullscreen">&#x26F6;</button>
+    </div>
+    <div id="video-container"></div>
+  </div>
+
+  <script src="player.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      const out = document.getElementById('results');
+      const results = [];
+
+      function pass(label) {
+        results.push({ ok: true, label: label });
+        console.log('[test] PASS:', label);
+      }
+
+      function fail(label, reason) {
+        results.push({ ok: false, label: label, reason: reason });
+        console.error('[test] FAIL:', label, '—', reason);
+      }
+
+      function assert(condition, label, reason) {
+        if (condition) { pass(label); } else { fail(label, reason || 'assertion failed'); }
+      }
+
+      function render() {
+        const passCount = results.filter(function (r) { return r.ok; }).length;
+        const failCount = results.length - passCount;
+        const lines = results.map(function (r) {
+          if (r.ok) {
+            return '<span class="pass">[PASS] ' + r.label + '</span>';
+          }
+          return '<span class="fail">[FAIL] ' + r.label + (r.reason ? ' — ' + r.reason : '') + '</span>';
+        });
+        lines.push('');
+        if (failCount === 0) {
+          lines.push('<span class="pass">All ' + passCount + ' tests passed.</span>');
+        } else {
+          lines.push('<span class="fail">' + failCount + ' test(s) failed, ' + passCount + ' passed.</span>');
+        }
+        out.innerHTML = lines.join('\n');
+      }
+
+      // ── Tests run after 1s to allow player.js to initialize ──────────────
+      setTimeout(function () {
+        const video = document.getElementById('player');
+
+        // T-01: video element exists in DOM
+        assert(video !== null, 'T-01: video element exists in DOM', 'getElementById returned null');
+
+        // T-02: default playbackRate is 1
+        assert(
+          video.playbackRate === 1,
+          'T-02: default playbackRate is 1',
+          'playbackRate was ' + video.playbackRate
+        );
+
+        // T-03: default volume is 1
+        assert(
+          video.volume === 1,
+          'T-03: default volume is 1',
+          'volume was ' + video.volume
+        );
+
+        // T-04: video is initially paused
+        assert(video.paused, 'T-04: video is initially paused', 'video.paused was false');
+
+        // T-05: play button element exists
+        const btnPlay = document.getElementById('btn-play');
+        assert(btnPlay !== null, 'T-05: #btn-play exists', 'getElementById returned null');
+
+        // T-06: seek bar element exists
+        const seek = document.getElementById('seek');
+        assert(seek !== null, 'T-06: #seek range input exists', 'getElementById returned null');
+
+        // T-07: volume range exists
+        const vol = document.getElementById('volume');
+        assert(vol !== null, 'T-07: #volume range input exists', 'getElementById returned null');
+
+        // T-08: speed select exists with 5 options
+        const speedSel = document.getElementById('speed');
+        assert(speedSel !== null, 'T-08: #speed select exists', 'getElementById returned null');
+        assert(
+          speedSel && speedSel.options.length === 5,
+          'T-09: speed select has 5 options',
+          'options.length was ' + (speedSel ? speedSel.options.length : 'N/A')
+        );
+
+        // T-10: fullscreen button exists
+        const btnFS = document.getElementById('btn-fullscreen');
+        assert(btnFS !== null, 'T-10: #btn-fullscreen exists', 'getElementById returned null');
+
+        // T-11: clicking play starts playback (async — we check paused flips)
+        if (video && btnPlay) {
+          // Mute before play attempt to satisfy autoplay policy
+          video.muted = true;
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise
+              .then(function () {
+                assert(!video.paused, 'T-11: clicking play → video.paused becomes false', '');
+                video.pause();
+                render();
+              })
+              .catch(function (err) {
+                fail('T-11: clicking play → video.paused becomes false', 'play() rejected: ' + err.message);
+                render();
+              });
+          } else {
+            // Old browser fallback
+            assert(!video.paused, 'T-11: clicking play → video.paused becomes false', '');
+            video.pause();
+            render();
+          }
+        } else {
+          fail('T-11: clicking play → video.paused becomes false', 'video or btnPlay missing');
+          render();
+        }
+
+        // Render initial results (T-11 rerenders after async resolves)
+        render();
+      }, 1000);
+    }());
+  </script>
+</body>
+</html>
