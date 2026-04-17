@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workshop 1 — Video Player</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="player-wrapper">
+    <h1 class="title">Workshop 1 — Browser Video Player</h1>
+    <p class="subtitle">Built live with Claude Code + RPETD &middot; Robert Amauta &middot; 2026-04-17</p>
+
+    <div class="video-container" id="video-container">
+      <video
+        id="player"
+        src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+        preload="metadata"
+      ></video>
+
+      <div id="controls" class="controls">
+        <!-- Play / Pause -->
+        <button id="btn-play" class="ctrl-btn" aria-label="Play">&#9654;</button>
+
+        <!-- Seek bar -->
+        <input
+          type="range"
+          id="seek"
+          class="seek-bar"
+          min="0"
+          max="100"
+          step="0.1"
+          value="0"
+          aria-label="Seek"
+        />
+
+        <!-- Time display -->
+        <span id="time-display" class="time-display">0:00 / 0:00</span>
+
+        <!-- Volume -->
+        <label class="ctrl-label" for="volume">Vol</label>
+        <input
+          type="range"
+          id="volume"
+          class="volume-bar"
+          min="0"
+          max="1"
+          step="0.05"
+          value="1"
+          aria-label="Volume"
+        />
+
+        <!-- Playback speed -->
+        <label class="ctrl-label" for="speed">Speed</label>
+        <select id="speed" class="speed-select" aria-label="Playback speed">
+          <option value="0.5">0.5x</option>
+          <option value="1" selected>1x</option>
+          <option value="1.25">1.25x</option>
+          <option value="1.5">1.5x</option>
+          <option value="2">2x</option>
+        </select>
+
+        <!-- Fullscreen -->
+        <button id="btn-fullscreen" class="ctrl-btn" aria-label="Fullscreen">&#x26F6;</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="player.js"></script>
+</body>
+</html>
